@@ -1,62 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const initialMovie = {
-    title: '',
-    director: '',
-    metascore: '',
-    stars: [],
-};
-
 const UpdateMovieForm = (props) => {
-    const [movie, setMovie] = useState(initialMovie);
+    console.log(props);
+    const [movie, setMovie] = useState({
+        id: null,
+        title: "",
+        director: "",
+        metascore: 0,
+        stars: []
+    });
+
+    // useEffect(() => {
+    //     getMovie();
+    // }, [props.location.state]);
 
     useEffect(() => {
-        axios
-            .get('http://localhost:5000/api/movies')
-            .then(res => setMovie({ movies: res.data }))
-            .catch(error => console.log(error));
-    }, []);
-
-    const { match } = props
-    useEffect(() => {
-        const id = match.params.id;
-        const movieToUpdate = movie.find(addedMovie => `${addedMovie.id}` === id);
-        if (movieToUpdate) {
-            console.log(movieToUpdate);
-            setMovie(movieToUpdate);
+        if (props.location.state) {
+            setMovie({ ...props.location.state });
         }
-    }, [match, movie]);
+    }, [props.location.state])
+
+    // const getMovie = () => {
+    //     const id = props.match.params.id;
+    //     axios
+    //         .get(`http://localhost:5000/api/movies/${id}`)
+    //         .then(res => setMovie(res.data))
+    //         .catch(err => console.log(err.response));
+    // }
+
+    // const { match } = props
+    // useEffect(() => {
+    //     const id = match.params.id;
+    //     const movieToUpdate = movie.find(addedMovie => `${addedMovie.id}` === id);
+    //     if (movieToUpdate) {
+    //         console.log(movieToUpdate);
+    //         setMovie(movieToUpdate);
+    //     }
+    // }, [match, movie]);
 
     const changeHandler = e => {
-        e.persist();
-        let value = e.target.value;
-        if (e.target.name === 'metascore') {
-            value = parseInt(value, 10);
-        }
+        setMovie({ ...movie, [e.target.name]: [e.target.value] });
+    }
 
-        setMovie({
-            ...movie,
-            [e.target.name]: value
-        });
-    };
+    // const changeHandler = e => {
+    //     e.persist();
+    //     let value = e.target.value;
+    //     if (e.target.name === 'metascore') {
+    //         value = parseInt(value, 10);
+    //     }
 
-    const handleSubmit = e => {
+    //     setMovie({
+    //         ...movie,
+    //         [e.target.name]: value
+    //     });
+    // };
+
+    const editMovie = e => {
         e.preventDefault();
-        // axios
-        //     .put(`http://localhost:5000/api/movies${movie.id}`, movie)
-        //     .then(res => {
-        //         props.updateItems(res.data);
-        //         props.history.push(`/item-list/${item.id}`);
-        //         setItem(initialItem);
-        //     })
-        //     .catch(err => console.log(err.response));
+        const editedMovie = {...movie}
+        if (!Array.isArray(movie.stars)) {
+            editedMovie.stars = editedMovie.stars.split(",");
+        }
+        // console.log(editedMovie, "<--- Edited Movie")
+        axios
+            // .put(`http://localhost:5000/api/movies${movie.id}`, movie)
+            .put(`http://localhost:5000/api/movies/${editedMovie.id}`, editedMovie)
+            .then(res => {
+                setMovie({
+                    id: null,
+                    title: "",
+                    director: "",
+                    metascore: 0,
+                    stars: []
+                });
+                props.history.push("/");
+            })
+            // .then(res => {
+            //     props.updateItems(res.data);
+            //     props.history.push(`/item-list/${item.id}`);
+            //     setItem(initialItem);
+            // })
+            .catch(err => console.error(err.response));
     };
 
     return (
         <div>
-            <h2>Add New Movie</h2>
-            <form onSubmit={handleSubmit}>
+            <h2>Update Movie</h2>
+            <form onSubmit={editMovie}>
                 Title:
                 <input
                     type="text"
@@ -80,8 +111,15 @@ const UpdateMovieForm = (props) => {
                     onChange={changeHandler}
                     value={movie.metascore}
                 />
+                Stars:
+                <input
+                    type="text"
+                    name="stars"
+                    onChange={changeHandler}
+                    value={movie.stars}
+                />
                 <div className="baseline" />
-                <button className="md-button form-button">Add New Movie</button>
+                <button className="md-button form-button">Update Movie</button>
             </form>
         </div>
     );
